@@ -31,12 +31,10 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   Future<List<Reserva>> fetchUsers() async {
-    final response = await http.get(Uri.parse('http://192.168.0.14/mobile'));
+    final response = await http.get(Uri.parse('http://192.168.0.14/reservas-mobile'));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      print(data.length);
-
       return data.map((json) => Reserva.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load users');
