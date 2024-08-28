@@ -28,11 +28,11 @@ class _MessageScreenState extends State<MessageScreen> {
   @override
   void initState() {
     super.initState();
-    fetchMessage();
+    carregaDados();
 
     // Requisita a cada 2 segundos
     _timer = Timer.periodic(Duration(seconds: 2), (timer) {
-      fetchMessage();
+      carregaDados();
     });
   }
 
@@ -42,7 +42,7 @@ class _MessageScreenState extends State<MessageScreen> {
     super.dispose();
   }
 
-  Future<void> fetchMessage() async {
+  Future<void> carregaDados() async {
     try {
       final response = await http.get(Uri.parse('http://192.168.0.14/mobile'));
 
