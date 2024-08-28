@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'reserva.dart';  // Certifique-se de importar o modelo de usuário
 
 void main() {
   runApp(MyApp());
@@ -11,55 +11,35 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MessageScreen(),
+      home: UsersScreen(),
     );
   }
 }
 
-class MessageScreen extends StatefulWidget {
+class UsersScreen extends StatefulWidget {
   @override
-  _MessageScreenState createState() => _MessageScreenState();
+  _UsersScreenState createState() => _UsersScreenState();
 }
 
-class _MessageScreenState extends State<MessageScreen> {
-  String message = "Loading...";
-  Timer? _timer;
+class _UsersScreenState extends State<UsersScreen> {
+  late Future<List<Reserva>> _users;
 
   @override
   void initState() {
     super.initState();
-    carregaDados();
-
-    // Requisita a cada 2 segundos
-    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
-      carregaDados();
-    });
+    _users = fetchUsers();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();  // Cancela o timer quando o widget é destruído
-    super.dispose();
-  }
+  Future<List<Reserva>> fetchUsers() async {
+    final response = await http.get(Uri.parse('http://192.168.0.14/mobile'));
 
-  Future<void> carregaDados() async {
-    try {
-      final response = await http.get(Uri.parse('http://192.168.0.14/mobile'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      print(data.length);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          message = data['data']['nome'] ?? 'No message found';
-        });
-      } else {
-        setState(() {
-          message = 'Failed to load message';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        message = 'Error: ${e.toString()}';
-      });
+      return data.map((json) => Reserva.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load users');
     }
   }
 
@@ -67,14 +47,31 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Message Screen'),
+        title: Text('Users'),
       ),
-      body: Center(
-        child: Text(
-          message,
-          style: TextStyle(fontSize: 24),
-          textAlign: TextAlign.center,
-        ),
+      body: FutureBuilder<List<Reserva>>(
+        future: _users,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No users found.'));
+          } else {
+            final users = snapshot.data!;
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return ListTile(
+                  title: Text(user.camArquivo),
+                  subtitle: Text(user.camArquivo),
+                );
+              },
+            );
+          }
+        },
       ),
     );
   }
